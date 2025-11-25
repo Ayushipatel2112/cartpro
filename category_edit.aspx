@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="edit_category.aspx.cs" Inherits="CartProWebApp.admin.edit_category" %>
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="category_edit.aspx.cs" Inherits="CartProWebApp.admin.category_edit" %>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +12,13 @@
 
 <body class="light-mode">
     <form id="form1" runat="server" enctype="multipart/form-data">
+
+        <asp:HiddenField ID="hfOldImagePath" runat="server" />
+
         <div class="container">
+            <%-- Assuming you use a sidebar/header include logic --%>
+            <%-- <% Server.Execute("include/sidebar.aspx"); %> --%>
+
             <main class="main-content">
                 <div id="page-content">
                     <section id="category-edit" class="page">
@@ -52,14 +58,13 @@
 
                                 <asp:FileUpload ID="fileImage" runat="server" accept="image/*" />
                                 <small style="display: block; margin-top: 5px; color: #666;">Leave empty to keep current image. Allowed formats: JPG, PNG, GIF, WEBP</small>
-
-                                <asp:HiddenField ID="hfOldImagePath" runat="server" />
                             </div>
 
                             <div class="modal-actions">
                                 <a href="category.aspx" class="btn-secondary">Cancel</a>
                                 <asp:Button ID="btnUpdate" runat="server" Text="Update Category" CssClass="btn-primary" OnClick="btnUpdate_Click" />
                             </div>
+
                         </div>
                     </section>
                 </div>
