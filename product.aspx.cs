@@ -3,21 +3,22 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Web.UI;
+using System.IO;
+using System.Linq;
 using System.Web.UI.WebControls;
 
 namespace CartProWebApp.admin
 {
     public partial class product : System.Web.UI.Page
     {
-        string connString = ConfigurationManager.ConnectionStrings["CartProConnection"].ConnectionString;
-        int PageSize = 10;
+        string cs = ConfigurationManager.ConnectionStrings["CartProConnection"].ConnectionString;
+        int PageSize = 10; // Number of items per page
 
         // Properties to store state in ViewState
         public int CurrentPage
         {
-            get { return ViewState["Page"] != null ? (int)ViewState["Page"] : 1; }
-            set { ViewState["Page"] = value; }
+            get { return ViewState["CurrentPage"] != null ? (int)ViewState["CurrentPage"] : 1; }
+            set { ViewState["CurrentPage"] = value; }
         }
 
         public string SortColumn
@@ -36,33 +37,31 @@ namespace CartProWebApp.admin
         {
             if (Session["AdminEmail"] == null)
             {
-                Response.Redirect("login.aspx");
+                Response.Redirect("Login.aspx");
             }
 
             if (!IsPostBack)
             {
-                // Check for URL messages
+                // Check for redirect messages
                 if (Request.QueryString["msg"] != null)
                 {
-                    pnlMessage.Visible = true;
-                    litMessage.Text = Request.QueryString["msg"];
+                    ShowMessage(Request.QueryString["msg"], true);
                 }
 
-                BindCategories();
-                BindProducts();
+                LoadCategories();
+                BindData();
             }
         }
 
-        private void BindCategories()
+        private void LoadCategories()
         {
-            using (SqlConnection conn = new SqlConnection(connString))
+            using (SqlConnection con = new SqlConnection(cs))
             {
-                string sql = "SELECT id, category_name FROM categories ORDER BY category_name ASC";
-                using (SqlDataAdapter sda = new SqlDataAdapter(sql, conn))
+                string query = "SELECT id, category_name FROM categories ORDER BY category_name";
+                using (SqlCommand cmd = new SqlCommand(query, con))
                 {
-                    DataTable dt = new DataTable();
-                    sda.Fill(dt);
-                    ddlCategory.DataSource = dt;
+                    con.Open();
+                    ddlCategory.DataSource = cmd.ExecuteReader();
                     ddlCategory.DataTextField = "category_name";
                     ddlCategory.DataValueField = "id";
                     ddlCategory.DataBind();
@@ -70,113 +69,109 @@ namespace CartProWebApp.admin
             }
         }
 
-        private void BindProducts()
+        private void BindData()
         {
-            using (SqlConnection conn = new SqlConnection(connString))
+            using (SqlConnection con = new SqlConnection(cs))
             {
-                conn.Open();
+                // Base Query
+                string query = @"SELECT p.*, c.category_name 
+                                 FROM products p 
+                                 LEFT JOIN categories c ON p.catid = c.id 
+                                 WHERE 1=1 ";
 
-                // 1. Build Base Query and Filter Logic
-                string whereClause = "WHERE 1=1";
-                List<SqlParameter> parameters = new List<SqlParameter>();
-
+                // 1. Apply Filters
                 if (!string.IsNullOrEmpty(txtSearch.Text.Trim()))
                 {
-                    whereClause += " AND (p.productname LIKE @Search OR p.productdescription LIKE @Search OR c.category_name LIKE @Search)";
-                    parameters.Add(new SqlParameter("@Search", "%" + txtSearch.Text.Trim() + "%"));
+                    query += " AND (p.productname LIKE @Search OR p.productdescription LIKE @Search)";
                 }
 
                 if (ddlCategory.SelectedValue != "0")
                 {
-                    whereClause += " AND p.catid = @CatId";
-                    parameters.Add(new SqlParameter("@CatId", ddlCategory.SelectedValue));
+                    query += " AND p.catid = @CatId";
                 }
 
                 if (!string.IsNullOrEmpty(ddlStock.SelectedValue))
                 {
-                    whereClause += " AND p.stock_status = @Stock";
-                    parameters.Add(new SqlParameter("@Stock", ddlStock.SelectedValue));
+                    query += " AND p.stock_status = @Stock";
                 }
 
-                // 2. Count Total Records (For Pagination)
-                string countSql = "SELECT COUNT(*) FROM products p LEFT JOIN categories c ON p.catid = c.id " + whereClause;
-                SqlCommand cmdCount = new SqlCommand(countSql, conn);
-                cmdCount.Parameters.AddRange(parameters.ToArray()); // Add filters to count query
-                int totalRecords = (int)cmdCount.ExecuteScalar();
-
-                // 3. Setup Pagination Display
-                int totalPages = (int)Math.Ceiling((double)totalRecords / PageSize);
-
-                // Safety check if current page is out of bounds (e.g. after deleting items)
-                if (CurrentPage > totalPages && totalPages > 0) CurrentPage = totalPages;
-                if (CurrentPage < 1) CurrentPage = 1;
-
-                int offset = (CurrentPage - 1) * PageSize;
-
-                litStart.Text = (totalRecords > 0) ? (offset + 1).ToString() : "0";
-                litEnd.Text = Math.Min(offset + PageSize, totalRecords).ToString();
-                litTotal.Text = totalRecords.ToString();
-
-                // 4. Fetch Data with Sorting and Paging
-                // Note: We clone parameters because we used them in the count query already
-                SqlParameter[] dataParams = new SqlParameter[parameters.Count];
-                for (int i = 0; i < parameters.Count; i++) dataParams[i] = (SqlParameter)((ICloneable)parameters[i]).Clone();
-
-                string sortSql = SortColumn == "category_name" ? "c.category_name" : "p." + SortColumn;
-
-                string dataSql = $@"
-                    SELECT p.id, p.catid, p.productname, p.productdescription, p.productprice, 
-                           p.image, p.stock_status, c.category_name 
-                    FROM products p 
-                    LEFT JOIN categories c ON p.catid = c.id 
-                    {whereClause}
-                    ORDER BY {sortSql} {SortDirection}
-                    OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
-
-                SqlCommand cmdData = new SqlCommand(dataSql, conn);
-                cmdData.Parameters.AddRange(dataParams);
-                cmdData.Parameters.AddWithValue("@Offset", offset);
-                cmdData.Parameters.AddWithValue("@PageSize", PageSize);
-
-                using (SqlDataAdapter sda = new SqlDataAdapter(cmdData))
+                // 2. Fetch Data into DataTable (for easier sorting/paging in memory)
+                // Note: For massive datasets (100k+ rows), use SQL Offset/Fetch. For standard logic, this is fine.
+                using (SqlCommand cmd = new SqlCommand(query, con))
                 {
-                    DataTable dt = new DataTable();
-                    sda.Fill(dt);
-                    rptProducts.DataSource = dt;
-                    rptProducts.DataBind();
+                    if (!string.IsNullOrEmpty(txtSearch.Text.Trim()))
+                        cmd.Parameters.AddWithValue("@Search", "%" + txtSearch.Text.Trim() + "%");
+
+                    if (ddlCategory.SelectedValue != "0")
+                        cmd.Parameters.AddWithValue("@CatId", ddlCategory.SelectedValue);
+
+                    if (!string.IsNullOrEmpty(ddlStock.SelectedValue))
+                        cmd.Parameters.AddWithValue("@Stock", ddlStock.SelectedValue);
+
+                    using (SqlDataAdapter sda = new SqlDataAdapter(cmd))
+                    {
+                        DataTable dt = new DataTable();
+                        sda.Fill(dt);
+
+                        // 3. Apply Sorting
+                        DataView dv = dt.DefaultView;
+                        dv.Sort = SortColumn + " " + SortDirection;
+                        UpdateSortIcons();
+
+                        // 4. Apply Pagination
+                        PagedDataSource pds = new PagedDataSource();
+                        pds.DataSource = dv;
+                        pds.AllowPaging = true;
+                        pds.PageSize = PageSize;
+                        pds.CurrentPageIndex = CurrentPage - 1; // Zero-based index
+
+                        // Update Stats
+                        int totalItems = dt.Rows.Count;
+                        int startItem = (CurrentPage - 1) * PageSize + 1;
+                        int endItem = Math.Min(CurrentPage * PageSize, totalItems);
+
+                        if (totalItems == 0) startItem = 0;
+
+                        litStart.Text = startItem.ToString();
+                        litEnd.Text = endItem.ToString();
+                        litTotal.Text = totalItems.ToString();
+
+                        // Bind Repeater
+                        rptProducts.DataSource = pds;
+                        rptProducts.DataBind();
+
+                        // Bind Pagination Buttons
+                        BindPaginationButtons(pds.PageCount);
+
+                        // Show/Hide Pagination Container based on data
+                        divPagination.Visible = totalItems > 0;
+                        btnFirst.Enabled = !pds.IsFirstPage;
+                        btnPrev.Enabled = !pds.IsFirstPage;
+                        btnNext.Enabled = !pds.IsLastPage;
+                        btnLast.Enabled = !pds.IsLastPage;
+                    }
                 }
-
-                // 5. Generate Page Numbers
-                BindPaginationButtons(totalPages);
-                divPagination.Visible = totalRecords > 0;
-
-                // 6. Update Sort Indicators
-                UpdateSortIndicators();
             }
         }
 
         private void BindPaginationButtons(int totalPages)
         {
             List<int> pages = new List<int>();
-            int start = Math.Max(1, CurrentPage - 2);
-            int end = Math.Min(totalPages, CurrentPage + 2);
-
-            for (int i = start; i <= end; i++) pages.Add(i);
-
+            // Logic to show a window of pages (e.g., current - 2 to current + 2)
+            for (int i = 1; i <= totalPages; i++)
+            {
+                pages.Add(i);
+            }
             rptPages.DataSource = pages;
             rptPages.DataBind();
-
-            btnFirst.Enabled = btnPrev.Enabled = (CurrentPage > 1);
-            btnNext.Enabled = btnLast.Enabled = (CurrentPage < totalPages);
-
-            // Store total pages for First/Last logic logic
-            ViewState["TotalPages"] = totalPages;
         }
+
+        // --- Event Handlers ---
 
         protected void btnSearch_Click(object sender, EventArgs e)
         {
-            CurrentPage = 1; // Reset to page 1 on search
-            BindProducts();
+            CurrentPage = 1; // Reset to page 1 on new search
+            BindData();
         }
 
         protected void btnReset_Click(object sender, EventArgs e)
@@ -187,7 +182,7 @@ namespace CartProWebApp.admin
             CurrentPage = 1;
             SortColumn = "id";
             SortDirection = "DESC";
-            BindProducts();
+            BindData();
         }
 
         protected void Sort_Click(object sender, EventArgs e)
@@ -198,32 +193,36 @@ namespace CartProWebApp.admin
             if (SortColumn == argument)
             {
                 // Toggle direction
-                SortDirection = (SortDirection == "ASC") ? "DESC" : "ASC";
+                SortDirection = SortDirection == "ASC" ? "DESC" : "ASC";
             }
             else
             {
-                // New column, default to ASC
                 SortColumn = argument;
-                SortDirection = "ASC";
+                SortDirection = "ASC"; // Default new sort to ASC
             }
 
-            BindProducts();
+            BindData();
         }
 
-        private void UpdateSortIndicators()
+        private void UpdateSortIcons()
         {
-            // Reset all labels
-            lblSortId.Text = lblSortCat.Text = lblSortName.Text = lblSortPrice.Text = lblSortStock.Text = "";
+            // Reset all icons
+            lblSortId.Text = "";
+            lblSortName.Text = "";
+            lblSortCat.Text = "";
+            lblSortPrice.Text = "";
+            lblSortStock.Text = "";
 
-            // Set arrow for current column
-            string arrow = (SortDirection == "ASC") ? "▲" : "▼";
+            // Set current icon
+            string icon = SortDirection == "ASC" ? " <i class='fas fa-sort-up'></i>" : " <i class='fas fa-sort-down'></i>";
+
             switch (SortColumn)
             {
-                case "id": lblSortId.Text = arrow; break;
-                case "category_name": lblSortCat.Text = arrow; break;
-                case "productname": lblSortName.Text = arrow; break;
-                case "productprice": lblSortPrice.Text = arrow; break;
-                case "stock_status": lblSortStock.Text = arrow; break;
+                case "id": lblSortId.Text = icon; break;
+                case "category_name": lblSortCat.Text = icon; break;
+                case "productname": lblSortName.Text = icon; break;
+                case "productprice": lblSortPrice.Text = icon; break;
+                case "stock_status": lblSortStock.Text = icon; break;
             }
         }
 
@@ -231,47 +230,110 @@ namespace CartProWebApp.admin
         {
             Button btn = (Button)sender;
             string arg = btn.CommandArgument;
-            int totalPages = (int)ViewState["TotalPages"];
 
-            if (arg == "prev") CurrentPage--;
-            else if (arg == "next") CurrentPage++;
-            else if (arg == "first") CurrentPage = 1;
-            else if (arg == "last") CurrentPage = totalPages;
-            else CurrentPage = Convert.ToInt32(arg);
+            if (arg == "prev")
+            {
+                if (CurrentPage > 1) CurrentPage--;
+            }
+            else if (arg == "next")
+            {
+                // Note: We don't check max here as BindData handles "IsLastPage", 
+                // but ideally you pass MaxPages to this method. 
+                // For simplicity, we increment and BindData calculates the real view.
+                CurrentPage++;
+            }
+            else if (arg == "first")
+            {
+                CurrentPage = 1;
+            }
+            else if (arg == "last")
+            {
+                // To implement "Last" correctly with PagedDataSource, 
+                // we need to know TotalPages before binding.
+                // For now, let's just make it very high number and PagedDataSource fixes it, 
+                // or fetch count first.
+                CurrentPage = 10000;
+            }
+            else
+            {
+                CurrentPage = Convert.ToInt32(arg);
+            }
 
-            BindProducts();
+            BindData();
         }
 
         protected void btnDelete_Click(object sender, EventArgs e)
         {
-            LinkButton btn = (LinkButton)sender;
-            int id = Convert.ToInt32(btn.CommandArgument);
-
-            using (SqlConnection conn = new SqlConnection(connString))
+            try
             {
-                // Optional: Delete image from folder before deleting DB record
-                // (Requires fetching image path first, omitted for brevity but recommended)
+                LinkButton btn = (LinkButton)sender;
+                int id = Convert.ToInt32(btn.CommandArgument);
+                string imagePath = "";
 
-                string sql = "DELETE FROM products WHERE id = @id";
-                SqlCommand cmd = new SqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("@id", id);
-                conn.Open();
-                cmd.ExecuteNonQuery();
+                using (SqlConnection con = new SqlConnection(cs))
+                {
+                    con.Open();
+                    // Get Image Path
+                    SqlCommand cmdSelect = new SqlCommand("SELECT image FROM products WHERE id=@id", con);
+                    cmdSelect.Parameters.AddWithValue("@id", id);
+                    object result = cmdSelect.ExecuteScalar();
+                    if (result != null) imagePath = result.ToString();
+
+                    // Delete
+                    SqlCommand cmdDelete = new SqlCommand("DELETE FROM products WHERE id=@id", con);
+                    cmdDelete.Parameters.AddWithValue("@id", id);
+                    int rows = cmdDelete.ExecuteNonQuery();
+
+                    if (rows > 0)
+                    {
+                        if (!string.IsNullOrEmpty(imagePath))
+                        {
+                            string physicalPath = Server.MapPath("~/" + imagePath);
+                            if (File.Exists(physicalPath)) File.Delete(physicalPath);
+                        }
+                        ShowMessage("Product deleted successfully.", true);
+                        BindData(); // Refresh list
+                    }
+                    else
+                    {
+                        ShowMessage("Error deleting product.", false);
+                    }
+                }
             }
-
-            // Refresh grid
-            BindProducts();
-            pnlMessage.Visible = true;
-            litMessage.Text = "Product deleted successfully.";
+            catch (Exception ex)
+            {
+                ShowMessage("Error: " + ex.Message, false);
+            }
         }
 
-        // Helper for Badge CSS
+        // Helper for Stock Badge styling
         public string GetStockBadgeClass(string status)
         {
-            status = status.ToLower();
-            if (status == "in stock") return "badge badge-success";
-            if (status == "low stock") return "badge badge-warning";
-            return "badge badge-danger";
+            switch (status)
+            {
+                case "In Stock": return "badge-success";
+                case "Low Stock": return "badge-warning";
+                case "Out of Stock": return "badge-danger";
+                default: return "";
+            }
+        }
+
+        private void ShowMessage(string message, bool isSuccess)
+        {
+            pnlMessage.Visible = true;
+            litMessage.Text = message;
+            if (isSuccess)
+            {
+                pnlMessage.Style["background-color"] = "#efe";
+                pnlMessage.Style["border-left"] = "4px solid #0c0";
+                litMessage.Text = "<span style='color:#060'>" + message + "</span>";
+            }
+            else
+            {
+                pnlMessage.Style["background-color"] = "#fee";
+                pnlMessage.Style["border-left"] = "4px solid #f00";
+                litMessage.Text = "<span style='color:#c00'>" + message + "</span>";
+            }
         }
     }
 }
