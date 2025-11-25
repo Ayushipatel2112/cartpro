@@ -128,3 +128,86 @@
         </div>
     </div>
     <!-- End Team Section -->
+
+    <!-- Start Testimonial Slider -->
+    <div class="testimonial-section before-footer-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-7 mx-auto text-center">
+                    <h2 class="section-title">Testimonials</h2>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-12">
+                    <div class="testimonial-slider-wrap text-center">
+                        <div id="testimonial-nav">
+                            <span class="prev" data-controls="prev"><span class="fa fa-chevron-left"></span></span>
+                            <span class="next" data-controls="next"><span class="fa fa-chevron-right"></span></span>
+                        </div>
+
+                        <div class="testimonial-slider">
+                            <div class="item">
+                                <div class="row justify-content-center">
+                                    <div class="col-lg-8 mx-auto">
+                                        <div class="testimonial-block text-center">
+                                            <blockquote class="mb-5">
+                                                <p>&ldquo;The watch I purchased from CartPro is a true masterpiece. The quality and design are exceptional, and I receive compliments every time I wear it. The customer service was also outstanding.&rdquo;</p>
+                                            </blockquote>
+                                            <div class="author-info">
+                                                <div class="author-pic">
+                                                    <img src="images/person-1.png" alt="Maria Jones" class="img-fluid" />
+                                                </div>
+                                                <h3 class="font-weight-bold">Maria Jones</h3>
+                                                <span class="position d-block mb-3">Satisfied Customer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="item">
+                                <div class="row justify-content-center">
+                                    <div class="col-lg-8 mx-auto">
+                                        <div class="testimonial-block text-center">
+                                            <blockquote class="mb-5">
+                                                <p>&ldquo;The shoes I bought are not only stylish but also incredibly comfortable. The customer service was exceptional, and the delivery was fast and free. I highly recommend this store to anyone looking for quality footwear.&rdquo;</p>
+                                            </blockquote>
+                                            <div class="author-info">
+                                                <div class="author-pic">
+                                                    <img src="images/person-2.png" alt="John Smith" class="img-fluid" />
+                                                </div>
+                                                <h3 class="font-weight-bold">John Smith</h3>
+                                                <span class="position d-block mb-3">Satisfied Customer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="item">
+                                <div class="row justify-content-center">
+                                    <div class="col-lg-8 mx-auto">
+                                        <div class="testimonial-block text-center">
+                                            <blockquote class="mb-5">
+                                                <p>&ldquo;The perfume I ordered exceeded my expectations. The scent is captivating and long-lasting. The customer support was very helpful, and my order arrived earlier than expected. I'm thrilled with my purchase.&rdquo;</p>
+                                            </blockquote>
+                                            <div class="author-info">
+                                                <div class="author-pic">
+                                                    <img src="images/person-3.png" alt="Emily Chen" class="img-fluid" />
+                                                </div>
+                                                <h3 class="font-weight-bold">Emily Chen</h3>
+                                                <span class="position d-block mb-3">Satisfied Customer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Testimonial Slider -->
+</asp:Content>
