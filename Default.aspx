@@ -51,3 +51,15 @@
                 <!-- End Column 2 -->
 
 
+ <!-- Start Column 3 -->
+ <div class="col-12 col-md-4 col-lg-3 mb-5 mb-md-0">
+     <a class="product-item" href="Cart.aspx">
+         <img src="images/product-2.png" class="img-fluid product-thumbnail" />
+         <h3 class="product-title">Luxury Perfume</h3>
+         <strong class="product-price">$85.00</strong>
+         <span class="icon-cross">
+             <img src="images/cross.svg" class="img-fluid" />
+         </span>
+     </a>
+ </div>
+ <!-- End Column 3 -->
