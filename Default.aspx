@@ -26,3 +26,15 @@
         </div>
     </div>
     <!-- End Hero Section -->
+    <!-- Start Product Section -->
+    <div class="product-section">
+        <div class="container">
+            <div class="row">
+                <!-- Start Column 1 -->
+                <div class="col-md-12 col-lg-3 mb-5 mb-lg-0">
+                    <h2 class="mb-4 section-title">Explore Our Collections</h2>
+                    <p class="mb-4">From timeless watches to elegant shoes, our collections are crafted to perfection. Discover accessories that define your style.</p>
+                    <p><a href="Shop.aspx" class="btn">Explore</a></p>
+                </div>
+                <!-- End Column 1 -->
+
