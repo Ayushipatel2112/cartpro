@@ -141,3 +141,29 @@
     </div>
 </div>
 <!-- End Why Choose Us Section -->
+ <!-- Start We Help Section -->
+ <div class="we-help-section">
+     <div class="container">
+         <div class="row justify-content-between">
+             <div class="col-lg-5 ps-lg-5">
+                 <h2 class="section-title mb-4">Elevate Your Style</h2>
+                 <p>Our fashion accessories are designed to elevate your style, offering a perfect blend of elegance and functionality. Whether you're dressing up for a special occasion or adding a touch of class to your everyday look, our collection has something for everyone.</p>
+                 <ul class="list-unstyled custom-list my-4">
+                     <li>Discover our range of stylish shoes for every occasion.</li>
+                     <li>Find your signature scent from our collection of luxury perfumes.</li>
+                     <li>Complete your look with our premium leather belts.</li>
+                     <li>Make a statement with our collection of elegant watches.</li>
+                 </ul>
+                 <p><a href="#" class="btn">Explore</a></p>
+             </div>
+             <div class="col-lg-7 mb-5 mb-lg-0">
+                 <div class="imgs-grid">
+                     <div class="grid grid-1"><img src="images/img-grid-1.jpg" alt="Untree.co" /></div>
+                     <div class="grid grid-2"><img src="images/img-grid-2.jpg" alt="Untree.co" /></div>
+                     <div class="grid grid-3"><img src="images/img-grid-3.jpg" alt="Untree.co" /></div>
+                 </div>
+             </div>
+         </div>
+     </div>
+ </div>
+ <!-- End We Help Section -->
