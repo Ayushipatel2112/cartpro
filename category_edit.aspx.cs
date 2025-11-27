@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Configuration;
 using System.Data.SqlClient;
 using System.IO;
@@ -40,39 +40,41 @@ namespace CartProWebApp.admin
                 }
             }
         }
+
         private void LoadCategoryData(int id)
-{
-    using (SqlConnection conn = new SqlConnection(connString))
-    {
-        string sql = "SELECT category_name, category_description, image FROM categories WHERE id = @id";
-        SqlCommand cmd = new SqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("@id", id);
-
-        conn.Open();
-        SqlDataReader reader = cmd.ExecuteReader();
-
-        if (reader.Read())
         {
-            txtName.Text = reader["category_name"].ToString();
-            txtDescription.Text = reader["category_description"].ToString();
-
-            string imgPath = reader["image"].ToString();
-
-            // Store the current path so we can use it if the user DOESN'T upload a new one
-            if (hfOldImagePath != null) hfOldImagePath.Value = imgPath;
-
-            if (!string.IsNullOrEmpty(imgPath))
+            using (SqlConnection conn = new SqlConnection(connString))
             {
-                imgPreview.ImageUrl = "~/" + imgPath;
-                divCurrentImage.Visible = true;
+                string sql = "SELECT category_name, category_description, image FROM categories WHERE id = @id";
+                SqlCommand cmd = new SqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@id", id);
+
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    txtName.Text = reader["category_name"].ToString();
+                    txtDescription.Text = reader["category_description"].ToString();
+
+                    string imgPath = reader["image"].ToString();
+
+                    // Store the current path so we can use it if the user DOESN'T upload a new one
+                    if (hfOldImagePath != null) hfOldImagePath.Value = imgPath;
+
+                    if (!string.IsNullOrEmpty(imgPath))
+                    {
+                        imgPreview.ImageUrl = "~/" + imgPath;
+                        divCurrentImage.Visible = true;
+                    }
+                }
+                else
+                {
+                    Response.Redirect("category.aspx?msg=Category not found");
+                }
             }
         }
-        else
-        {
-            Response.Redirect("category.aspx?msg=Category not found");
-        }
-    }
-}
+
         protected void btnUpdate_Click(object sender, EventArgs e)
         {
             // 3. Get ID from ViewState
@@ -169,5 +171,3 @@ namespace CartProWebApp.admin
         }
     }
 }
-
-
