@@ -11,7 +11,7 @@ namespace CartProWebApp.admin
 {
 
 
-    public partial class edit_category
+    public partial class category_edit
     {
 
         /// <summary>
@@ -22,6 +22,15 @@ namespace CartProWebApp.admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlForm form1;
+
+        /// <summary>
+        /// hfOldImagePath control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfOldImagePath;
 
         /// <summary>
         /// pnlError control.
@@ -85,15 +94,6 @@ namespace CartProWebApp.admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.FileUpload fileImage;
-
-        /// <summary>
-        /// hfOldImagePath control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hfOldImagePath;
 
         /// <summary>
         /// btnUpdate control.
